@@ -3,4 +3,8 @@ A MIDI note analyzer in the style of the Roland A110 Midi device, accepts USB Ho
 
 Using a Teensy 3.6 and 8x 0.96" SPI SSD136 displays to make one long display.
 
-Still to do, MIDI channel change and LED display.
+LED display for channel and program change information
+
+Added channel selection control 1-16, Omni Mode and Program Omni Mode (displays all program changes)
+
+Added the hold function, led will light when a sustain message is seen in the MIDI stream
