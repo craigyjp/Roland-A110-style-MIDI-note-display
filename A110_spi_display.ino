@@ -150,7 +150,7 @@ typedef struct {
   uint16_t param; //the parameter that is selected
 } param_type;
 
-int mynotes[96];
+int mynotes[120];
 
 int ProgramMode = 0;
 int ProgramChangeReceived = 0;
@@ -165,8 +165,8 @@ int fifthoctavenote = 0;
 int sixthoctavenote = 0;
 int seventhoctavenote = 0;
 int eigthoctavenote = 0;
-//int 9octavenote = 0;
-//int 10octavenote = 0;
+int ninthoctavenote = 0;
+int tenthoctavenote = 0;
 
 int firstoctavenoteoff = 0;
 int secondoctavenoteoff = 0;
@@ -176,8 +176,8 @@ int fifthoctavenoteoff = 0;
 int sixthoctavenoteoff = 0;
 int seventhoctavenoteoff = 0;
 int eigthoctavenoteoff = 0;
-//int 9octavenoteoff = 0;
-//int 10octavenoteoff = 0;
+int ninthoctavenoteoff = 0;
+int tenthoctavenoteoff = 0;
 
 typedef struct {
   uint8_t rate[6];  //dly, r1, r2, r3, r4, r5
@@ -221,6 +221,8 @@ const uint8_t SCRMAP[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 #define OLED6_CS     7
 #define OLED7_CS     8
 #define OLED8_CS     9
+#define OLED9_CS     38
+#define OLED10_CS     36
 
 #define OLED_DC1     23
 #define OLED_DC2     25
@@ -230,6 +232,8 @@ const uint8_t SCRMAP[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 #define OLED_DC6     29
 #define OLED_DC7     30
 #define OLED_DC8     31
+#define OLED_DC9     39
+#define OLED_DC10     37
 
 #define SUSTAINLED     35
 
@@ -256,6 +260,12 @@ Adafruit_SSD1306 display7(SCREEN_WIDTH, SCREEN_HEIGHT,
 
 Adafruit_SSD1306 display8(SCREEN_WIDTH, SCREEN_HEIGHT,
                           &SPI, OLED_DC8, -1, OLED8_CS);
+
+Adafruit_SSD1306 display9(SCREEN_WIDTH, SCREEN_HEIGHT,
+                          &SPI, OLED_DC9, -1, OLED9_CS);
+
+Adafruit_SSD1306 display10(SCREEN_WIDTH, SCREEN_HEIGHT,
+                           &SPI, OLED_DC10, -1, OLED10_CS);
 
 //USB HOST MIDI Class Compliant
 USBHost myusb;
@@ -301,7 +311,7 @@ void setup() {
   display.setBrightness(0x0f);
   pinMode(SUSTAINLED, OUTPUT);
   digitalWrite(SUSTAINLED, LOW);
-  for (int i = 0; i < 96; i++)
+  for (int i = 0; i < 120; i++)
   {
     mynotes[i] = 0;
   }
@@ -334,7 +344,7 @@ void myControlChange(byte channel, byte control, byte value)
 
 void clear_notes()
 {
-  for (int i = 0; i < 96; i++)
+  for (int i = 0; i < 120; i++)
   {
     if (mynotes[i] == 1)
     {
@@ -567,7 +577,7 @@ void read_pot()
 void myNoteOn(byte channel, byte note, byte velocity)
 {
   //Check for out of range notes
-  if (note < 0 || note > 127) return;
+  if (note < 0 || note > 120) return;
   switch (note)
   {
     case 0:
@@ -705,6 +715,40 @@ void myNoteOn(byte channel, byte note, byte velocity)
       eigthoctavenote = (note - 84);
       display_note(eigthoctavenote, 7);
       break;
+
+    case 96:
+    case 97:
+    case 98:
+    case 99:
+    case 100:
+    case 101:
+    case 102:
+    case 103:
+    case 104:
+    case 105:
+    case 106:
+    case 107:
+      mynotes[note] = 1;
+      ninthoctavenote = (note - 96);
+      display_note(ninthoctavenote, 8);
+      break;
+
+    case 108:
+    case 109:
+    case 110:
+    case 111:
+    case 112:
+    case 113:
+    case 114:
+    case 115:
+    case 116:
+    case 117:
+    case 118:
+    case 119:
+      mynotes[note] = 1;
+      tenthoctavenote = (note - 108);
+      display_note(tenthoctavenote, 9);
+      break;
   }
 
 }
@@ -712,7 +756,7 @@ void myNoteOn(byte channel, byte note, byte velocity)
 void myNoteOff(byte channel, byte noteoff, byte velocity)
 {
   //Check for out of range notes
-  if (noteoff < 0 || noteoff > 127) return;
+  if (noteoff < 0 || noteoff > 120) return;
   switch (noteoff)
   {
     case 0:
@@ -849,6 +893,40 @@ void myNoteOff(byte channel, byte noteoff, byte velocity)
       mynotes[noteoff] = 0;
       eigthoctavenoteoff = (noteoff - 84);
       remove_note(eigthoctavenoteoff, 7);
+      break;
+
+    case 96:
+    case 97:
+    case 98:
+    case 99:
+    case 100:
+    case 101:
+    case 102:
+    case 103:
+    case 104:
+    case 105:
+    case 106:
+    case 107:
+      mynotes[noteoff] = 0;
+      ninthoctavenoteoff = (noteoff - 96);
+      remove_note(ninthoctavenoteoff, 8);
+      break;
+
+    case 108:
+    case 109:
+    case 110:
+    case 111:
+    case 112:
+    case 113:
+    case 114:
+    case 115:
+    case 116:
+    case 117:
+    case 118:
+    case 119:
+      mynotes[noteoff] = 0;
+      tenthoctavenoteoff = (noteoff - 108);
+      remove_note(tenthoctavenoteoff, 9);
       break;
   }
 
