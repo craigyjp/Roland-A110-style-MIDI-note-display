@@ -1,7 +1,7 @@
 # Roland-A110-style-MIDI-note-display
 A MIDI note analyzer in the style of the Roland A110 Midi device, accepts USB Host, USB MIDI and MIDI DIN inputs and displays the notes.
 
-Displays notes from 0-120
+Displays note values from 0-120
 
 Using a Teensy 3.6 and 10x 0.96" SPI SSD136 displays to make one long display.
 
