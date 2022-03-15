@@ -4,123 +4,126 @@
 #include <USBHost_t36.h>
 #include <SPI.h>
 #include <TM1637Display.h>
+//#define ENCODER_OPTIMIZE_INTERRUPTS
+//#include <Encoder.h>
+#include <Bounce.h>
+//#include <RoxMux.h>
 
 // Module connection pins (Digital Pins)
 #define CLK 34
 #define DIO 33
 
-// The amount of time (in milliseconds) between tests
-#define TEST_DELAY   2000
+TM1637Display display(CLK, DIO);
 
 const uint8_t CHAN01[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
   SEG_B | SEG_C                                    // 1
 };
 
 const uint8_t CHAN02[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_A | SEG_B | SEG_D | SEG_E | SEG_G                           // 2
+  SEG_A | SEG_B | SEG_D | SEG_E | SEG_G            // 2
 };
 
 const uint8_t CHAN03[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_A | SEG_B | SEG_D | SEG_C | SEG_G                                // 3
+  SEG_A | SEG_B | SEG_D | SEG_C | SEG_G            // 3
 };
 
 const uint8_t CHAN04[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_B | SEG_C | SEG_F | SEG_G                                    // 4
+  SEG_B | SEG_C | SEG_F | SEG_G                    // 4
 };
 
 const uint8_t CHAN05[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_A | SEG_C | SEG_D | SEG_F | SEG_G                                 // 4
+  SEG_A | SEG_C | SEG_D | SEG_F | SEG_G            // 5
 };
 
 const uint8_t CHAN06[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_C | SEG_D | SEG_E | SEG_F | SEG_G                                // 4
+  SEG_C | SEG_D | SEG_E | SEG_F | SEG_G            // 6
 };
 
 const uint8_t CHAN07[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_A | SEG_B | SEG_C                              // 4
+  SEG_A | SEG_B | SEG_C                            // 7
 };
 
 const uint8_t CHAN08[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_A | SEG_B | SEG_C | SEG_D | SEG_E  | SEG_F | SEG_G                               // 4
+  SEG_A | SEG_B | SEG_C | SEG_D | SEG_E  | SEG_F | SEG_G  // 8
 };
 
 const uint8_t CHAN09[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // 0
-  SEG_A | SEG_B | SEG_C | SEG_F | SEG_G                               // 4
+  SEG_A | SEG_B | SEG_C | SEG_F | SEG_G            // 9
 };
 
 const uint8_t CHAN10[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
-  SEG_B | SEG_C,                                    // 1
-  SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F   // 0
+  SEG_B | SEG_C,                                   // 1
+  SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F    // 0
 };
 
 const uint8_t CHAN11[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_B | SEG_C,                                   // 1
   SEG_B | SEG_C                                    // 1
 };
 
 const uint8_t CHAN12[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
-  SEG_B | SEG_C,                                    // 1
-  SEG_A | SEG_B | SEG_D | SEG_E | SEG_G                           // 2
+  SEG_B | SEG_C,                                   // 1
+  SEG_A | SEG_B | SEG_D | SEG_E | SEG_G            // 2
 };
 
 const uint8_t CHAN13[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
   SEG_B | SEG_C,                                   // 1
-  SEG_A | SEG_B | SEG_D | SEG_C | SEG_G                                // 3
+  SEG_A | SEG_B | SEG_D | SEG_C | SEG_G            // 3
 };
 
 const uint8_t CHAN14[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
-  SEG_B | SEG_C,                                    // 1
-  SEG_B | SEG_C | SEG_F | SEG_G
+  SEG_B | SEG_C,                                   // 1
+  SEG_B | SEG_C | SEG_F | SEG_G                    // 4
 };
 
 const uint8_t CHAN15[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
-  SEG_B | SEG_C,                                    // 1
+  SEG_B | SEG_C,                                   // 1
   SEG_A | SEG_C | SEG_D | SEG_F | SEG_G            // 5
 };
 
 const uint8_t CHAN16[] = {
-  SEG_A | SEG_D | SEG_E | SEG_F,                    // C
+  SEG_A | SEG_D | SEG_E | SEG_F,                   // C
   SEG_C | SEG_E | SEG_F | SEG_G,                   // h
-  SEG_B | SEG_C,                                    // 1
+  SEG_B | SEG_C,                                   // 1
   SEG_C | SEG_D | SEG_E | SEG_F | SEG_G            // 6
 };
 
@@ -138,25 +141,12 @@ const uint8_t PGM[] = {
   SEG_A | SEG_B | SEG_C | SEG_E | SEG_F             // M
 };
 
-TM1637Display display(CLK, DIO);
-
-#define DISPLAY_NORMAL 0
-#define DISPLAY_OVERVIEW 1
-#define DISPLAY_MENU 2
-
-//Need to put the typedef here, for function's sake...
-typedef struct {
-  uint8_t unit; //the unit that is selected
-  uint16_t param; //the parameter that is selected
-} param_type;
-
 int mynotes[120];
 
 int ProgramMode = 0;
 int ProgramChangeReceived = 0;
-int newChan = 0;
 int masterChan = 1;
-int potvalue = 0;
+int EncoderValue = 1;
 int firstoctavenote = 0;
 int secondoctavenote = 0;
 int thirdoctavenote = 0;
@@ -179,39 +169,12 @@ int eigthoctavenoteoff = 0;
 int ninthoctavenoteoff = 0;
 int tenthoctavenoteoff = 0;
 
-typedef struct {
-  uint8_t rate[6];  //dly, r1, r2, r3, r4, r5
-  uint8_t level[6]; //l0, l1, l2, l3, l4, l5
-} env_type;
-
-
-
-//Default menu: OSC of unit 1, Volume
-uint8_t greenSelect = 2;
-uint8_t blueSelect = 0;
-uint8_t operatorSelect = 0; //Selected operator, often the same as operator used, except for envelopes
-uint8_t operatorUsed = 0; //Operator actually used
-uint8_t toggleMode = 0; //Sets the toggle mode
-uint8_t patchSelect = 0; //The active patch
-bool patchChanged = false; //True if the patch is changed without saving it
-bool dx7LegacyMode = false; //Don't go into legacy mode! (it's not allowed ;-))
 String outputdisplay = "       ";
-uint8_t displayMode = DISPLAY_OVERVIEW; //Sets the overview mode (extra information, is temporarilly set to DISPLAY_NORMAL whenever you hit a button)
-unsigned long lastChange = 0; //Sets the time when you last hit a button
-
-//Set to true when an interrupt arrives: don't do anything till the interrupt is processed (or bad things will happen due to concurrency!!!)
-bool rotating = false;
-
-//Mapping from logical screens to fysical OLEDs
-const uint8_t SCRMAP[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-//// SCK, MOSI, CS, DC, RES
-//U8GLIB_SSD1306_128X64 displayOne(13, 11, 5, 2, 3);
-//U8GLIB_SSD1306_128X64 displayTwo(13, 11, 35, 38, 39);
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-#define OLED_RESET  32
+#define OLED_RESET  10
 
 #define OLED1_CS     2
 #define OLED2_CS     3
@@ -222,20 +185,28 @@ const uint8_t SCRMAP[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 #define OLED7_CS     8
 #define OLED8_CS     9
 #define OLED9_CS     38
-#define OLED10_CS     36
+#define OLED10_CS     37
 
-#define OLED_DC1     23
-#define OLED_DC2     25
-#define OLED_DC3     26
-#define OLED_DC4     27
-#define OLED_DC5     28
-#define OLED_DC6     29
-#define OLED_DC7     30
-#define OLED_DC8     31
-#define OLED_DC9     39
-#define OLED_DC10     37
+#define OLED_DC1     25
+#define OLED_DC2     26
+#define OLED_DC3     27
+#define OLED_DC4     28
+#define OLED_DC5     29
+#define OLED_DC6     30
+#define OLED_DC7     31
+#define OLED_DC8     32
+#define OLED_DC9     36
+#define OLED_DC10     35
 
-#define SUSTAINLED     35
+#define SUSTAINLED     39
+
+#define UP_SW 15
+#define DOWN_SW 14
+#define DEBOUNCE 30
+
+//These are pushbuttons and require debouncing
+Bounce upSwitch = Bounce(UP_SW, DEBOUNCE);
+Bounce downSwitch = Bounce(DOWN_SW, DEBOUNCE);
 
 Adafruit_SSD1306 display1(SCREEN_WIDTH, SCREEN_HEIGHT,
                           &SPI, OLED_DC1, OLED_RESET, OLED1_CS);
@@ -267,6 +238,7 @@ Adafruit_SSD1306 display9(SCREEN_WIDTH, SCREEN_HEIGHT,
 Adafruit_SSD1306 display10(SCREEN_WIDTH, SCREEN_HEIGHT,
                            &SPI, OLED_DC10, -1, OLED10_CS);
 
+
 //USB HOST MIDI Class Compliant
 USBHost myusb;
 USBHub hub1(myusb);
@@ -277,7 +249,7 @@ MIDIDevice midi1(myusb);
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
 
 void setup() {
-
+  Serial.begin(57600);
   //USB HOST MIDI Class Compliant
   delay(200); //Wait to turn on USB Host
   myusb.begin();
@@ -302,18 +274,53 @@ void setup() {
   MIDI.setHandleNoteOff(myNoteOff);
   Serial.println("MIDI In DIN Listening");
 
-  // put your setup code here, to run once:
-  Wire.begin();
-
   //Next, we splash the OLED screens
   setupScreens();
   splashScreens();
-  display.setBrightness(0x0f);
+  display.setBrightness(0x0d);
   pinMode(SUSTAINLED, OUTPUT);
   digitalWrite(SUSTAINLED, LOW);
   for (int i = 0; i < 120; i++)
   {
     mynotes[i] = 0;
+  }
+  display.setSegments(CHAN01);
+  pinMode(UP_SW, INPUT_PULLUP);
+  pinMode(DOWN_SW, INPUT_PULLUP);
+}
+
+void loop() {
+  MIDI.read(masterChan);    //MIDI 5 Pin DIN
+  usbMIDI.read(masterChan); //USB Client MIDI
+  myusb.Task();
+  midi1.read(masterChan);   //USB HOST MIDI Class Compliant
+  checkSwitches();
+}
+
+void checkSwitches()
+{
+  upSwitch.update();
+  if (upSwitch.fallingEdge())
+  {
+    clear_notes();
+    EncoderValue = (EncoderValue + 1);
+    if (EncoderValue >= 19)
+    {
+      EncoderValue = 1;
+    }
+    read_pot(EncoderValue);
+  }
+
+  downSwitch.update();
+  if (downSwitch.fallingEdge())
+  {
+    clear_notes();
+    EncoderValue = (EncoderValue - 1);
+    if (EncoderValue < 1)
+    {
+      EncoderValue = 18;
+    }
+    read_pot(EncoderValue);
   }
 }
 
@@ -354,215 +361,129 @@ void clear_notes()
   }
 }
 
-void read_pot()
+void read_pot(int EncoderValue)
 {
-  potvalue = analogRead(A0);
 
-  if (potvalue >= 0 && potvalue < 57)
+  if (EncoderValue == 1)
   {
-    newChan = 1;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 1;
     display.setSegments(CHAN01);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 58 && potvalue < 114 )
+  else if (EncoderValue == 2)
   {
-    newChan = 2;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 2;
     display.setSegments(CHAN02);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 115 && potvalue < 171)
+  else if (EncoderValue == 3)
   {
-    newChan = 3;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 3;
     display.setSegments(CHAN03);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 172 && potvalue < 227)
+  else if (EncoderValue == 4)
   {
-    newChan = 4;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 4;
     display.setSegments(CHAN04);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 228 && potvalue < 283)
+  else if (EncoderValue == 5)
   {
-    newChan = 5;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 5;
     display.setSegments(CHAN05);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 284 && potvalue < 339)
+  else if (EncoderValue == 6)
   {
-    newChan = 6;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 6;
     display.setSegments(CHAN06);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 340 && potvalue < 395)
+  else if (EncoderValue == 7)
   {
-    newChan = 7;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 7;
     display.setSegments(CHAN07);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 396 && potvalue < 451)
+  else if (EncoderValue == 8)
   {
-    newChan = 8;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 8;
     display.setSegments(CHAN08);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 452 && potvalue < 507)
+  else if (EncoderValue == 9)
   {
-    newChan = 9;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 9;
     display.setSegments(CHAN09);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 508 && potvalue < 563)
+  else if (EncoderValue == 10)
   {
-    newChan = 10;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 10;
     display.setSegments(CHAN10);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 564 && potvalue < 619)
+  else if (EncoderValue == 11)
   {
-    newChan = 11;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 11;
     display.setSegments(CHAN11);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 620 && potvalue < 675)
+  else if (EncoderValue == 12)
   {
-    newChan = 12;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 12;
     display.setSegments(CHAN12);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 676 && potvalue < 731)
+  else if (EncoderValue == 13)
   {
-    newChan = 13;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 13;
     display.setSegments(CHAN13);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 732 && potvalue < 787)
+  else if (EncoderValue == 14)
   {
-    newChan = 14;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 14;
     display.setSegments(CHAN14);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 788 && potvalue < 843)
+  else if (EncoderValue == 15)
   {
-    newChan = 15;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 15;
     display.setSegments(CHAN15);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 844 && potvalue < 899)
+  else if (EncoderValue == 16)
   {
-    newChan = 16;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 16;
     display.setSegments(CHAN16);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 900 && potvalue < 955)
+  else if (EncoderValue == 17)
   {
-    newChan = 0;
-    if (newChan != masterChan)
-    {
-      clear_notes();
-    }
     masterChan = 0;
     display.setSegments(OMNI);
     ProgramMode = 0;
     ProgramChangeReceived = 0;
   }
-  else if (potvalue >= 956 && potvalue < 1024)
+  else if (EncoderValue == 18)
   {
     masterChan = 0;
     ProgramMode = 1;
@@ -576,8 +497,6 @@ void read_pot()
 
 void myNoteOn(byte channel, byte note, byte velocity)
 {
-  //Check for out of range notes
-  if (note < 0 || note > 120) return;
   switch (note)
   {
     case 0:
@@ -750,13 +669,10 @@ void myNoteOn(byte channel, byte note, byte velocity)
       display_note(tenthoctavenote, 9);
       break;
   }
-
 }
 
 void myNoteOff(byte channel, byte noteoff, byte velocity)
 {
-  //Check for out of range notes
-  if (noteoff < 0 || noteoff > 120) return;
   switch (noteoff)
   {
     case 0:
@@ -929,14 +845,1434 @@ void myNoteOff(byte channel, byte noteoff, byte velocity)
       remove_note(tenthoctavenoteoff, 9);
       break;
   }
-
 }
 
-void loop() {
-  read_pot();
-  // put your main code here, to run repeatedly:
-  myusb.Task();
-  midi1.read(masterChan);   //USB HOST MIDI Class Compliant
-  MIDI.read(masterChan);//MIDI 5 Pin DIN
-  usbMIDI.read(masterChan); //USB Client MIDI
+void setupScreens() {
+
+  display1.begin(SSD1306_SWITCHCAPVCC);
+  display1.clearDisplay();
+  display1.display();
+  delay(50);
+  display2.begin(SSD1306_SWITCHCAPVCC);
+  display2.clearDisplay();
+  display2.display();
+  delay(50);
+  display3.begin(SSD1306_SWITCHCAPVCC);
+  display3.clearDisplay();
+  display3.display();
+  delay(50);
+  display4.begin(SSD1306_SWITCHCAPVCC);
+  display4.clearDisplay();
+  display4.display();
+  delay(50);
+  display5.begin(SSD1306_SWITCHCAPVCC);
+  display5.clearDisplay();
+  display5.display();
+  delay(50);
+  display6.begin(SSD1306_SWITCHCAPVCC);
+  display6.clearDisplay();
+  display6.display();
+  delay(50);
+  display7.begin(SSD1306_SWITCHCAPVCC);
+  display7.clearDisplay();
+  display7.display();
+  delay(50);
+  display8.begin(SSD1306_SWITCHCAPVCC);
+  display8.clearDisplay();
+  display8.display();
+  delay(50);
+  display9.begin(SSD1306_SWITCHCAPVCC);
+  display9.clearDisplay();
+  display9.display();
+  delay(50);
+  display10.begin(SSD1306_SWITCHCAPVCC);
+  display10.clearDisplay();
+  display10.display();
+}
+
+
+void splashScreens() {
+
+  delay(100);
+
+  display1.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display1.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display1.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display1.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display1.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display1.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display1.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display1.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display1.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display1.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display1.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display1.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display1.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display1.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display1.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display1.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display1.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display1.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display1.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display1.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display1.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display1.display();
+
+  display2.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display2.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display2.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display2.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display2.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display2.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display2.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display2.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display2.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display2.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display2.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display2.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display2.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display2.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display2.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display2.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display2.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display2.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display2.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display2.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display2.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display2.display();
+
+  display3.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display3.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display3.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display3.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display3.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display3.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display3.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display3.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display3.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display3.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display3.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display3.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display3.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display3.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display3.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display3.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display3.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display3.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display3.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display3.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display3.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display3.display();
+
+  display4.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display4.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display4.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display4.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display4.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display4.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display4.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display4.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display4.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display4.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display4.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display4.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display4.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display4.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display4.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display4.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display4.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display4.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display4.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display4.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display4.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display4.display();
+
+  display5.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display5.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display5.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display5.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display5.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display5.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display5.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display5.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display5.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display5.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display5.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display5.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display5.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display5.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display5.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display5.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display5.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display5.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display5.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display5.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display5.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display5.display();
+
+  display6.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display6.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display6.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display6.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display6.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display6.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display6.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display6.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display6.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display6.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display6.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display6.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display6.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display6.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display6.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display6.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display6.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display6.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display6.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display6.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display6.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display6.display();
+
+  display7.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display7.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display7.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display7.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display7.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display7.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display7.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display7.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display7.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display7.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display7.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display7.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display7.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display7.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display7.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display7.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display7.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display7.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display7.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display7.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display7.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display7.display();
+
+  display8.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display8.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display8.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display8.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display8.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display8.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display8.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display8.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display8.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display8.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display8.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display8.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display8.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display8.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display8.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display8.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display8.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display8.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display8.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display8.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display8.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display8.display();
+
+  display9.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display9.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display9.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display9.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display9.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display9.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display9.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display9.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display9.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display9.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display9.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display9.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display9.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display9.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display9.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display9.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display9.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display9.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display9.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display9.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display9.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display9.display();
+
+  display10.drawRect(5, 32, 11, 28, SSD1306_WHITE);
+  display10.drawRect(23, 32, 11, 28, SSD1306_WHITE);
+  display10.drawRect(41, 32, 11, 28, SSD1306_WHITE);
+  display10.drawRect(59, 32, 11, 28, SSD1306_WHITE);
+  display10.drawRect(77, 32, 11, 28, SSD1306_WHITE);
+  display10.drawRect(95, 32, 11, 28, SSD1306_WHITE);
+  display10.drawRect(112, 32, 11, 28, SSD1306_WHITE);
+
+  display10.drawRect(14, 0, 11, 28, SSD1306_WHITE);
+  display10.drawRect(33, 0, 11, 28, SSD1306_WHITE);
+  display10.drawRect(67, 0, 11, 28, SSD1306_WHITE);
+  display10.drawRect(85, 0, 11, 28, SSD1306_WHITE);
+  display10.drawRect(105, 0, 11, 28, SSD1306_WHITE);
+
+  display10.drawLine(0, 63, 127, 63, SSD1306_WHITE);
+  display10.drawLine(0, 0, 0, 63, SSD1306_WHITE);
+  display10.drawLine(127, 0, 127, 63, SSD1306_WHITE);
+  display10.drawLine(55, 0, 55, 63, SSD1306_WHITE);
+
+  display10.drawLine(19, 30, 19, 63, SSD1306_WHITE);
+  display10.drawLine(37, 30, 37, 63, SSD1306_WHITE);
+  display10.drawLine(73, 30, 73, 63, SSD1306_WHITE);
+  display10.drawLine(91, 30, 91, 63, SSD1306_WHITE);
+  display10.drawLine(109, 30, 109, 63, SSD1306_WHITE);
+  display10.display();
+}
+
+void initScreens() {
+  //Nothing to do: initialization of screens is nothing at the moment
+}
+
+void clearScreen(uint8_t screen) {
+  display1.clearDisplay();
+  display1.display();
+  display2.clearDisplay();
+  display2.display();
+  display3.clearDisplay();
+  display3.display();
+  display4.clearDisplay();
+  display4.display();
+  display5.clearDisplay();
+  display5.display();
+  display6.clearDisplay();
+  display6.display();
+  display7.clearDisplay();
+  display7.display();
+  display8.clearDisplay();
+  display8.display();
+  display9.clearDisplay();
+  display9.display();
+  display10.clearDisplay();
+  display10.display();
+}
+
+
+void display_note(int note, uint8_t screen)
+{
+  //    Serial.print("NoteOff ");
+  //  Serial.println(noteoff);
+  switch (screen)
+  {
+    case 0:
+      switch (note)
+      {
+        case 0:
+          display1.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 1:
+          display1.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 2:
+          display1.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 3:
+          display1.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 4:
+          display1.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display1.display();
+        case 5:
+          display1.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 6:
+          display1.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 7:
+          display1.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 8:
+          display1.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 9:
+          display1.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 10:
+          display1.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+        case 11:
+          display1.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display1.display();
+          break;
+      }
+      break;
+
+    case 1:
+      switch (note)
+      {
+        case 0:
+          display2.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display2.display();;
+          break;
+        case 1:
+          display2.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 2:
+          display2.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 3:
+          display2.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 4:
+          display2.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 5:
+          display2.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 6:
+          display2.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 7:
+          display2.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 8:
+          display2.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 9:
+          display2.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 10:
+          display2.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+        case 11:
+          display2.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display2.display();
+          break;
+      }
+      break;
+    case 2:
+      switch (note)
+      {
+        case 0:
+          display3.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 1:
+          display3.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 2:
+          display3.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 3:
+          display3.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 4:
+          display3.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 5:
+          display3.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 6:
+          display3.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 7:
+          display3.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 8:
+          display3.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 9:
+          display3.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 10:
+          display3.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+        case 11:
+          display3.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display3.display();
+          break;
+      }
+      break;
+
+    case 3:
+      switch (note)
+      {
+        case 0:
+          display4.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 1:
+          display4.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 2:
+          display4.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 3:
+          display4.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 4:
+          display4.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 5:
+          display4.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 6:
+          display4.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 7:
+          display4.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 8:
+          display4.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 9:
+          display4.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 10:
+          display4.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+        case 11:
+          display4.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display4.display();
+          break;
+      }
+      break;
+
+    case 4:
+      switch (note)
+      {
+        case 0:
+          display5.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 1:
+          display5.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 2:
+          display5.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 3:
+          display5.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 4:
+          display5.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 5:
+          display5.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 6:
+          display5.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 7:
+          display5.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 8:
+          display5.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 9:
+          display5.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 10:
+          display5.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+        case 11:
+          display5.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display5.display();
+          break;
+      }
+      break;
+
+    case 5:
+      switch (note)
+      {
+        case 0:
+          display6.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 1:
+          display6.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 2:
+          display6.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 3:
+          display6.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 4:
+          display6.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 5:
+          display6.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 6:
+          display6.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 7:
+          display6.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 8:
+          display6.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 9:
+          display6.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 10:
+          display6.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+        case 11:
+          display6.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display6.display();
+          break;
+      }
+      break;
+
+    case 6:
+      switch (note)
+      {
+        case 0:
+          display7.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 1:
+          display7.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 2:
+          display7.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 3:
+          display7.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 4:
+          display7.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 5:
+          display7.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 6:
+          display7.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 7:
+          display7.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 8:
+          display7.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 9:
+          display7.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 10:
+          display7.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+        case 11:
+          display7.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display7.display();
+          break;
+      }
+      break;
+
+    case 7:
+      switch (note)
+      {
+        case 0:
+          display8.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 1:
+          display8.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 2:
+          display8.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 3:
+          display8.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 4:
+          display8.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 5:
+          display8.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 6:
+          display8.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 7:
+          display8.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 8:
+          display8.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 9:
+          display8.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 10:
+          display8.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+        case 11:
+          display8.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display8.display();
+          break;
+      }
+      break;
+
+    case 8:
+      switch (note)
+      {
+        case 0:
+          display9.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 1:
+          display9.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 2:
+          display9.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 3:
+          display9.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 4:
+          display9.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 5:
+          display9.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 6:
+          display9.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 7:
+          display9.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 8:
+          display9.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 9:
+          display9.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 10:
+          display9.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+        case 11:
+          display9.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display9.display();
+          break;
+      }
+      break;
+
+    case 9:
+      switch (note)
+      {
+        case 0:
+          display10.fillRect(6, 33, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 1:
+          display10.fillRect(15, 1, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 2:
+          display10.fillRect(24, 33, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 3:
+          display10.fillRect(34, 1, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 4:
+          display10.fillRect(42, 33, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 5:
+          display10.fillRect(60, 33, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 6:
+          display10.fillRect(68, 1, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 7:
+          display10.fillRect(78, 33, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 8:
+          display10.fillRect(86, 1, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 9:
+          display10.fillRect(96, 33, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 10:
+          display10.fillRect(106, 1, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+        case 11:
+          display10.fillRect(113, 33, 9, 26, SSD1306_WHITE);
+          display10.display();
+          break;
+      }
+      break;
+  }
+}
+
+void remove_note(int noteoff, uint8_t screen)
+{
+  //  Serial.print("NoteOff ");
+  //  Serial.println(noteoff);
+  switch (screen)
+  {
+    case 0:
+      switch (noteoff)
+      {
+        case 0:
+          display1.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 1:
+          display1.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 2:
+          display1.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 3:
+          display1.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 4:
+          display1.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 5:
+          display1.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 6:
+          display1.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 7:
+          display1.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 8:
+          display1.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 9:
+          display1.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 10:
+          display1.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+        case 11:
+          display1.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display1.display();
+          break;
+      }
+      break;
+
+    case 1:
+      switch (noteoff)
+      {
+        case 0:
+          display2.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 1:
+          display2.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 2:
+          display2.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 3:
+          display2.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 4:
+          display2.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 5:
+          display2.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 6:
+          display2.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 7:
+          display2.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 8:
+          display2.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 9:
+          display2.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 10:
+          display2.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+        case 11:
+          display2.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display2.display();
+          break;
+      }
+      break;
+    case 2:
+      switch (noteoff)
+      {
+        case 0:
+          display3.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 1:
+          display3.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 2:
+          display3.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 3:
+          display3.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 4:
+          display3.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 5:
+          display3.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 6:
+          display3.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 7:
+          display3.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 8:
+          display3.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 9:
+          display3.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 10:
+          display3.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+        case 11:
+          display3.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display3.display();
+          break;
+      }
+      break;
+
+    case 3:
+      switch (noteoff)
+      {
+        case 0:
+          display4.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 1:
+          display4.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 2:
+          display4.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 3:
+          display4.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 4:
+          display4.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 5:
+          display4.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 6:
+          display4.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 7:
+          display4.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 8:
+          display4.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 9:
+          display4.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 10:
+          display4.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+        case 11:
+          display4.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display4.display();
+          break;
+      }
+      break;
+
+    case 4:
+      switch (noteoff)
+      {
+        case 0:
+          display5.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 1:
+          display5.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 2:
+          display5.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 3:
+          display5.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 4:
+          display5.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 5:
+          display5.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 6:
+          display5.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 7:
+          display5.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 8:
+          display5.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 9:
+          display5.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 10:
+          display5.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+        case 11:
+          display5.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display5.display();
+          break;
+      }
+      break;
+
+    case 5:
+      switch (noteoff)
+      {
+        case 0:
+          display6.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 1:
+          display6.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 2:
+          display6.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 3:
+          display6.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 4:
+          display6.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 5:
+          display6.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 6:
+          display6.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 7:
+          display6.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 8:
+          display6.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 9:
+          display6.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 10:
+          display6.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+        case 11:
+          display6.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display6.display();
+          break;
+      }
+      break;
+
+    case 6:
+      switch (noteoff)
+      {
+        case 0:
+          display7.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 1:
+          display7.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 2:
+          display7.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 3:
+          display7.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 4:
+          display7.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 5:
+          display7.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 6:
+          display7.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 7:
+          display7.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 8:
+          display7.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 9:
+          display7.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 10:
+          display7.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+        case 11:
+          display7.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display7.display();
+          break;
+      }
+      break;
+
+    case 7:
+      switch (noteoff)
+      {
+        case 0:
+          display8.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 1:
+          display8.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 2:
+          display8.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 3:
+          display8.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 4:
+          display8.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 5:
+          display8.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 6:
+          display8.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 7:
+          display8.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 8:
+          display8.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 9:
+          display8.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 10:
+          display8.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+        case 11:
+          display8.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display8.display();
+          break;
+      }
+      break;
+
+    case 8:
+      switch (noteoff)
+      {
+        case 0:
+          display9.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 1:
+          display9.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 2:
+          display9.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 3:
+          display9.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 4:
+          display9.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 5:
+          display9.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 6:
+          display9.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 7:
+          display9.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 8:
+          display9.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 9:
+          display9.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 10:
+          display9.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+        case 11:
+          display9.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display9.display();
+          break;
+      }
+      break;
+
+    case 9:
+      switch (noteoff)
+      {
+        case 0:
+          display10.fillRect(6, 33, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 1:
+          display10.fillRect(15, 1, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 2:
+          display10.fillRect(24, 33, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 3:
+          display10.fillRect(34, 1, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 4:
+          display10.fillRect(42, 33, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 5:
+          display10.fillRect(60, 33, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 6:
+          display10.fillRect(68, 1, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 7:
+          display10.fillRect(78, 33, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 8:
+          display10.fillRect(86, 1, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 9:
+          display10.fillRect(96, 33, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 10:
+          display10.fillRect(106, 1, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+        case 11:
+          display10.fillRect(113, 33, 9, 26, SSD1306_BLACK);
+          display10.display();
+          break;
+      }
+      break;
+  }
 }
